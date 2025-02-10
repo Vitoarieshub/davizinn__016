@@ -1,0 +1,193 @@
+
+-- Carregar Fluent
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+-- Função para enviar notificações
+local function notify(title, content)
+    Fluent:Notify({
+        Title = title,
+        Content = content,
+        Duration = 3 -- Define a duração da notificação para 3 segundos
+    })
+end
+
+-- Aviso ao executar
+notify("Executado com sucesso!", "Seja bem vindo .")
+
+-- Criar a janela principal
+local Window = Fluent:CreateWindow({
+    Title = " Hub_FF " .. Fluent.Version,
+    TabWidth = 90,
+    Size = UDim2.fromOffset(420, 360),
+    Theme = "Dark"
+})
+
+-- Tabela de abas
+local Tabs = {
+    Main = Window:AddTab({ Title = "Geral" }),
+    Players = Window:AddTab({ Title = "Visual" }),
+}
+
+-- Funções utilitárias
+local function setHumanoidProperty(property, value)
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    humanoid[property] = value
+    print(property .. " ajustado para:", value)
+end
+
+-- Infinite Jump
+local jumpConnection
+local function toggleInfiniteJump(enable)
+    if enable then
+        if not jumpConnection then
+            jumpConnection = game:GetService("UserInputService").JumpRequest:Connect(function()
+                local player = game.Players.LocalPlayer
+                local character = player.Character or player.CharacterAdded:Wait()
+                local humanoid = character:WaitForChild("Humanoid")
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end)
+        end
+    elseif jumpConnection then
+        jumpConnection:Disconnect()
+        jumpConnection = nil
+    end
+end
+
+-- Noclip
+local noclipConnection
+local function toggleNoclip(enable)
+    if enable then
+        if not noclipConnection then
+            noclipConnection = game:GetService("RunService").Stepped:Connect(function()
+                for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end)
+        end
+        notify("Travessa Paredes Ativado", "Você pode atravessar paredes agora!")
+    else
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
+        end
+        for _, part in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+        notify("Travessa Paredes", "Travessa Paredes foi Desativado.")
+    end
+end
+
+-- Aba: Início
+Tabs.Main:AddParagraph({ Title = "Dono do script", Content = "davizinn__016" })
+
+Tabs.Main:AddButton({
+    Title = "Fly",
+    Callback = function()
+        loadstring(game:HttpGet('https://pastebin.com/raw/YSL3xKYU'))()
+    end
+})
+
+Tabs.Main:AddToggle("Travessa Paredes", {
+    Title = "Travessa Paredes",
+    Description = "Ativa/desativa a travessia de paredes",
+    Default = false,
+    Callback = toggleNoclip
+})
+
+Tabs.Main:AddToggle("infjump", {
+    Title = "Pulo infinito",
+    Description = "Ativa/desativa o pulo infinito",
+    Default = false,
+    Callback = function(state)
+        notify(
+            state and "Pulo infinito Ativado" or "Pulo infinito Desativado", 
+            state and "Pulo infinito ativado com sucesso!" or "Pulo infinito desativado."
+        )
+        toggleInfiniteJump(state)
+    end
+})
+
+Tabs.Main:AddSlider("JumpPower", {
+    Title = "Altura do pulo",
+    Description = "Define a altura do pulo",
+    Default = 50,
+    Min = 0,
+    Max = 400,
+    Rounding = 1,
+    Callback = function(value)
+        setHumanoidProperty("JumpPower", value)
+    end
+})
+
+Tabs.Main:AddSlider("Velocidade", {
+    Title = "Velocidade",
+    Description = "Define a velocidade do jogador",
+    Default = 20,
+    Min = 0,
+    Max = 200,
+    Rounding = 1,
+    Callback = function(value)
+        setHumanoidProperty("WalkSpeed", value)
+    end
+})
+
+-- Aba: Jogadores
+Tabs.Players:AddButton({
+    Title = "ESP Nome",
+    Callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/rSUGN1fK"))()
+    end
+})
+
+Tabs.Players:AddButton({
+    Title = "ESP Linhas",
+    Callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/nnHbfvGW"))()
+    end
+})
+
+Tabs.Players:AddButton({
+    Title = "FPS",
+    Callback = function()
+        local Players = game:GetService("Players")
+        local RunService = game:GetService("RunService")
+
+        local player = Players.LocalPlayer
+        local playerGui = player:FindFirstChild("PlayerGui") or player:WaitForChild("PlayerGui")
+
+        -- Criar a interface do FPS
+        local screenGui = Instance.new("ScreenGui")
+        screenGui.Parent = playerGui
+
+        local fpsLabel = Instance.new("TextLabel")
+        fpsLabel.Size = UDim2.new(0, 70, 0, 25) 
+        fpsLabel.Position = UDim2.new(1, -80, 0, 10) 
+        fpsLabel.BackgroundTransparency = 1 
+        fpsLabel.TextColor3 = Color3.fromRGB(255, 255, 255) 
+        fpsLabel.TextScaled = true
+        fpsLabel.Font = Enum.Font.Code
+        fpsLabel.Text = "FPS: 0"
+        fpsLabel.Parent = screenGui
+
+        -- Variáveis para medir FPS
+        local lastTime = os.clock()
+        local frameCount = 0
+
+        RunService.RenderStepped:Connect(function()
+            frameCount = frameCount + 1
+            local currentTime = os.clock()
+            
+            if currentTime - lastTime >= 1 then
+                fpsLabel.Text = "FPS: " .. frameCount
+                frameCount = 0
+                lastTime = currentTime
+            end
+        end)
+    end
+})
